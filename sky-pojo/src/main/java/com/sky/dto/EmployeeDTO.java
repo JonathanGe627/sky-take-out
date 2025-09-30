@@ -1,5 +1,6 @@
 package com.sky.dto;
 
+import com.sky.annotation.Gender;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -10,14 +11,15 @@ public class EmployeeDTO implements Serializable {
 
     private Long id;
 
-    @NotBlank(message = "用户名不能为空！")
+    @NotBlank(message = "{username.NotBlank.message}")
     private String username;
 
-    @NotBlank(message = "姓名不能为空！")
+    @NotBlank(message = "{name.NotBlank.message}")
     private String name;
 
     private String phone;
 
+    @Gender
     private String sex;
 
     private String idNumber;

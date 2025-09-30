@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Result methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e){
+    public Result handleMethodArgumentNotValidException(MethodArgumentNotValidException e){
         log.error("异常信息：{}", e.getMessage());
         BindingResult bindingResult = e.getBindingResult();
         List<FieldError> fieldErrors = bindingResult.getFieldErrors();
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public Result dataIntegrityViolationExceptionHandler(DataIntegrityViolationException e){
+    public Result handleDataIntegrityViolationException(DataIntegrityViolationException e){
         log.error("异常信息：{}", e.getMessage());
         String exceptionName = e.getClass().getName();
         String message = e.getCause().toString();
@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(BaseException.class)
-    public Result BaseExceptionHandler(BaseException e){
+    public Result handleBaseException(BaseException e){
         log.error("异常信息：{}", e.getMessage());
         return Result.error(e.getMessage());
     }
@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(Throwable.class)
-    public Result throwableHandler(Throwable e){
+    public Result handleThrowable(Throwable e){
         log.error("捕获到异常类型：{}", e.getClass().getName(), e);
         log.error("异常信息：{}", e.getMessage());
         return Result.error(e.getMessage());

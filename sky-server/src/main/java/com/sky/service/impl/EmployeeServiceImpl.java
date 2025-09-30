@@ -17,6 +17,7 @@ import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
 import com.sky.result.PageResult;
 import com.sky.service.EmployeeService;
+import com.sky.vo.EmployeeVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -91,6 +92,39 @@ public class EmployeeServiceImpl implements EmployeeService {
         Page<Employee> page = employeeMapper.getEmployeeList(employeePageQueryDTO.getName());
         PageResult<Employee> pageResult = new PageResult<>(page.getTotal(), page.getResult());
         return pageResult;
+    }
+
+    /**
+     * 启用/禁用员工账号
+     * @param id
+     * @param status
+     */
+    @Override
+    public void updateStatus(Long id, Integer status) {
+        Employee employee = Employee.builder().id(id).status(status).build();
+        employeeMapper.updateEmployee(employee);
+    }
+
+    /**
+     * 根据id查询员工
+     * @param id
+     * @return
+     */
+    @Override
+    public EmployeeVO getEmployeeById(Long id) {
+        Employee employee = employeeMapper.getEmployeeById(id);
+        EmployeeVO employeeVO = BeanUtil.copyProperties(employee, EmployeeVO.class);
+        return employeeVO;
+    }
+
+    /**
+     * 更改员工信息
+     * @param employeeDTO
+     */
+    @Override
+    public void updateEmployee(EmployeeDTO employeeDTO) {
+        Employee employee = BeanUtil.copyProperties(employeeDTO, Employee.class);
+        employeeMapper.updateEmployee(employee);
     }
 
 }

@@ -11,6 +11,7 @@ import com.sky.result.Result;
 import com.sky.service.EmployeeService;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.EmployeeLoginVO;
+import com.sky.vo.EmployeeVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -99,5 +100,42 @@ public class EmployeeController {
     public Result<PageResult<Employee>> getEmployeeList(EmployeePageQueryDTO employeePageQueryDTO){
         PageResult<Employee> employeePageResult = employeeService.getEmployeeList(employeePageQueryDTO);
         return Result.success(employeePageResult);
+    }
+
+    /**
+     * 启用/禁用员工账号
+     * @param id
+     * @param status
+     * @return
+     */
+    @ApiOperation("启用/禁用员工账号")
+    @PostMapping("/status/{status}")
+    public Result updateEmployeeStatus(@RequestParam("id") Long id, @PathVariable("status") Integer status){
+        employeeService.updateStatus(id, status);
+        return Result.success();
+    }
+
+    /**
+     * 根据id查询员工
+     * @param id
+     * @return
+     */
+    @ApiOperation("根据id查询员工")
+    @GetMapping("/{id}")
+    public Result<EmployeeVO> getEmployeeById(@PathVariable("id") Long id){
+        EmployeeVO employeeVO = employeeService.getEmployeeById(id);
+        return Result.success(employeeVO);
+    }
+
+    /**
+     * 更改员工信息
+     * @param employeeDTO
+     * @return
+     */
+    @ApiOperation("更改员工信息")
+    @PutMapping
+    public Result updateEmployee(@RequestBody EmployeeDTO employeeDTO){
+        employeeService.updateEmployee(employeeDTO);
+        return Result.success();
     }
 }

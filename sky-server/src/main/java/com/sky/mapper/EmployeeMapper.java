@@ -30,4 +30,18 @@ public interface EmployeeMapper {
      * @return
      */
     Page<Employee> getEmployeeList(String name);
+
+    /**
+     * 更改员工信息
+     * @param employee
+     */
+    void updateEmployee(Employee employee);
+
+    /**
+     * 根据id查询员工
+     * @param id
+     * @return
+     */
+    @Select("select * from employee where id = #{id}")
+    Employee getEmployeeById(Long id);
 }

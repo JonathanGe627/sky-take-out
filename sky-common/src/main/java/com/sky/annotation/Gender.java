@@ -16,7 +16,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target(FIELD)
 @Retention(RUNTIME)
 public @interface Gender {
-    String message() default "{gender.illegal.message}";
+    String message() default "{employeeDTO.gender.illegal.message}";
     Class<?>[] groups() default { };
     Class<? extends Payload>[] payload() default { };
 }

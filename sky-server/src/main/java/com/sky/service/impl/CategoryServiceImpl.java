@@ -3,6 +3,7 @@ package com.sky.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.constant.StatusConstant;
 import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
@@ -27,7 +28,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void insertCategory(CategoryDTO categoryDTO) {
         Category category = BeanUtil.copyProperties(categoryDTO, Category.class);
-        category.setStatus(0);
+        category.setStatus(StatusConstant.DISABLE);
         categoryMapper.insertCategory(category);
     }
 

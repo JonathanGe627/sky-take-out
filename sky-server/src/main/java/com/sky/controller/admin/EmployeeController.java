@@ -80,61 +80,66 @@ public class EmployeeController {
 
     /**
      * 添加员工
+     *
      * @param employeeDTO
      * @return
      */
     @ApiOperation("添加员工")
     @PostMapping
-    public Result insertEmployee(@RequestBody @Validated EmployeeDTO employeeDTO){
+    public Result insertEmployee(@RequestBody @Validated EmployeeDTO employeeDTO) {
         employeeService.insertEmployee(employeeDTO);
         return Result.success();
     }
 
     /**
      * 分页查询员工列表，支持根据员工姓名模糊查询
+     *
      * @param employeePageQueryDTO
      * @return
      */
     @ApiOperation("分页模糊查询员工列表")
     @GetMapping("/page")
-    public Result<PageResult<Employee>> getEmployeeList(EmployeePageQueryDTO employeePageQueryDTO){
-        PageResult<Employee> employeePageResult = employeeService.getEmployeeList(employeePageQueryDTO);
+    public Result<PageResult<Employee>> getEmployeeList(EmployeePageQueryDTO employeePageQueryDTO) {
+        PageResult<Employee> employeePageResult = employeeService.page(employeePageQueryDTO);
         return Result.success(employeePageResult);
     }
 
     /**
      * 启用/禁用员工账号
+     *
      * @param id
      * @param status
      * @return
      */
     @ApiOperation("启用/禁用员工账号")
     @PostMapping("/status/{status}")
-    public Result updateEmployeeStatus(@RequestParam("id") Long id, @PathVariable("status") Integer status){
+    public Result updateEmployeeStatus(@RequestParam("id") Long id, @PathVariable("status") Integer status) {
         employeeService.updateStatus(id, status);
         return Result.success();
     }
 
     /**
      * 根据id查询员工
+     *
      * @param id
      * @return
      */
     @ApiOperation("根据id查询员工")
     @GetMapping("/{id}")
-    public Result<EmployeeVO> getEmployeeById(@PathVariable("id") Long id){
+    public Result<EmployeeVO> getEmployeeById(@PathVariable("id") Long id) {
         EmployeeVO employeeVO = employeeService.getEmployeeById(id);
         return Result.success(employeeVO);
     }
 
     /**
      * 更改员工信息
+     *
      * @param employeeDTO
      * @return
      */
     @ApiOperation("更改员工信息")
     @PutMapping
-    public Result updateEmployee(@RequestBody EmployeeDTO employeeDTO){
+    public Result updateEmployee(@RequestBody EmployeeDTO employeeDTO) {
         employeeService.updateEmployee(employeeDTO);
         return Result.success();
     }

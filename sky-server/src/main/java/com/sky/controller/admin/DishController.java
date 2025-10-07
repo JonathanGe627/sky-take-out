@@ -2,6 +2,7 @@ package com.sky.controller.admin;
 
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
+import com.sky.entity.Dish;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.DishService;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Api(tags = "菜品接口")
+@Api(tags = "菜品管理接口")
 @RestController
 @RequestMapping("/admin/dish")
 public class DishController {
@@ -40,8 +41,8 @@ public class DishController {
      */
     @ApiOperation("菜品分页模糊查询")
     @GetMapping("/page")
-    public Result<PageResult<DishVO>> getDishList(DishPageQueryDTO dishPageQueryDTO){
-        PageResult<DishVO> pageResult = dishService.getDishList(dishPageQueryDTO);
+    public Result<PageResult<DishVO>> page(DishPageQueryDTO dishPageQueryDTO){
+        PageResult<DishVO> pageResult = dishService.page(dishPageQueryDTO);
         return Result.success(pageResult);
     }
 
@@ -79,5 +80,24 @@ public class DishController {
     public Result updateDish(@RequestBody DishDTO dishDTO){
         dishService.updateDish(dishDTO);
         return Result.success();
+    }
+
+    @ApiOperation("启售/停售菜品")
+    @PostMapping("/status/{status}")
+    public Result updateDishStatus(@RequestParam("id") Long id, @PathVariable("status") Integer status){
+        dishService.updateDishStatus(id, status);
+        return Result.success();
+    }
+
+    /**
+     * 根据分类查询已上架的菜品
+     * @param categoryId
+     * @return
+     */
+    @ApiOperation("根据分类查询已上架的菜品")
+    @GetMapping("/list")
+    public Result<List<Dish>> getDishesByCategoryId(@RequestParam("categoryId") Long categoryId){
+        List<Dish> dishList = dishService.getDishesByCategoryId(categoryId);
+        return Result.success(dishList);
     }
 }

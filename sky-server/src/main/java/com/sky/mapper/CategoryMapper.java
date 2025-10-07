@@ -27,7 +27,7 @@ public interface CategoryMapper {
      * @param type
      * @return
      */
-    Page<Category> getCategoryList(String name, Integer type);
+    Page<Category> page(String name, Integer type);
 
     /**
      * 根据id删除分类
@@ -48,7 +48,7 @@ public interface CategoryMapper {
      * @param type
      * @return
      */
-    @Select("select * from category order by sort")
+    @Select("select * from category where type = #{type} order by sort")
     List<Category> list(Integer type);
 
 }

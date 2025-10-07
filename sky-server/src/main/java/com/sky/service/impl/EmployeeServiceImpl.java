@@ -38,7 +38,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         String password = employeeLoginDTO.getPassword();
 
         //1、根据用户名查询数据库中的数据
-        Employee employee = employeeMapper.getByUsername(username);
+        Employee employee = employeeMapper.getEmployeeByUsername(username);
 
         //2、处理各种异常情况（用户名不存在、密码不对、账号被锁定）
         if (employee == null) {
@@ -64,6 +64,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /**
      * 添加员工
+     *
      * @param employeeDTO
      */
     @Override
@@ -76,19 +77,21 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /**
      * 分页查询员工列表，支持根据员工姓名模糊查询
+     *
      * @param employeePageQueryDTO
      * @return
      */
     @Override
-    public PageResult<Employee> getEmployeeList(EmployeePageQueryDTO employeePageQueryDTO) {
+    public PageResult<Employee> page(EmployeePageQueryDTO employeePageQueryDTO) {
         PageHelper.startPage(employeePageQueryDTO.getPage(), employeePageQueryDTO.getPageSize());
-        Page<Employee> page = employeeMapper.getEmployeeList(employeePageQueryDTO.getName());
+        Page<Employee> page = employeeMapper.page(employeePageQueryDTO.getName());
         PageResult<Employee> pageResult = new PageResult<>(page.getTotal(), page.getResult());
         return pageResult;
     }
 
     /**
      * 启用/禁用员工账号
+     *
      * @param id
      * @param status
      */
@@ -100,6 +103,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /**
      * 根据id查询员工
+     *
      * @param id
      * @return
      */
@@ -112,6 +116,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /**
      * 更改员工信息
+     *
      * @param employeeDTO
      */
     @Override

@@ -35,7 +35,8 @@
         </set>
         where id = #{id}
     </update>
-    <select id="getEmployeeList" resultType="com.sky.entity.Employee">
+
+    <select id="page" resultType="com.sky.entity.Employee">
         select * from employee
         <where>
             <if test="name != null and name != ''">

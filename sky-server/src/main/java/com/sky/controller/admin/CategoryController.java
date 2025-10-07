@@ -47,7 +47,7 @@ public class CategoryController {
     @ApiOperation("分页模糊查询分类列表")
     @GetMapping("/page")
     public Result<PageResult<Category>> getCategoryList(CategoryPageQueryDTO categoryPageQueryDTO){
-        PageResult<Category> categoryPageResult = categoryService.getCategoryList(categoryPageQueryDTO);
+        PageResult<Category> categoryPageResult = categoryService.page(categoryPageQueryDTO);
         return Result.success(categoryPageResult);
     }
 

@@ -20,7 +20,7 @@ public interface CategoryService {
      * @param categoryPageQueryDTO
      * @return
      */
-    PageResult<Category> getCategoryList(CategoryPageQueryDTO categoryPageQueryDTO);
+    PageResult<Category> page(CategoryPageQueryDTO categoryPageQueryDTO);
 
     /**
      * 根据id删除分类

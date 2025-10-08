@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Api(tags = "套餐管理接口")
-@RestController
+@Api(tags = "管理端套餐管理接口")
+@RestController("adminSetmealController")
 @RequestMapping("/admin/setmeal")
 public class SetmealController {
 

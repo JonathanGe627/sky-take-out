@@ -42,9 +42,18 @@ public interface CategoryService {
     void updateCategoryStatus(Long id, Integer status);
 
     /**
-     * 获取所有分类
+     * 根据类型获取分类
      * @param type
      * @return
      */
     List<Category> list(Integer type);
+
+    /**
+     * 根据类型获取启用/禁用状态的分类
+     * status = 1 为启用，status = 0 为禁用
+     * @param type
+     * @param status
+     * @return
+     */
+    List<Category> list(Integer type, Integer status);
 }

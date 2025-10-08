@@ -11,8 +11,10 @@ import com.sky.entity.SetmealDish;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
+import com.sky.service.DishService;
 import com.sky.service.SetmealDishService;
 import com.sky.service.SetmealService;
+import com.sky.vo.DishItemVO;
 import com.sky.vo.SetmealVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,9 @@ public class SetmealServiceImpl implements SetmealService {
 
     @Autowired
     private SetmealDishService setmealDishService;
+
+    @Autowired
+    private DishService dishService;
 
     /**
      * 新增套餐
@@ -85,12 +90,25 @@ public class SetmealServiceImpl implements SetmealService {
 
     /**
      * 根据种类id查询套餐
-     * @param id
+     * @param categoryId
      * @return
      */
     @Override
-    public List<Setmeal> getSetmealsByCategoryId(Long id) {
-        List<Setmeal> setmealList = setmealMapper.getSetmealsByCategoryId(id);
+    public List<Setmeal> getSetmealsByCategoryId(Long categoryId) {
+        List<Setmeal> setmealList = setmealMapper.getSetmealsByCategoryId(categoryId, null);
+        return setmealList;
+    }
+
+    /**
+     * 根据种类id查询已上架/或下架的套餐
+     * status = 1 为上架，status = 0 为下架
+     * @param categoryId
+     * @param status
+     * @return
+     */
+    @Override
+    public List<Setmeal> getSetmealsByCategoryId(Long categoryId, Integer status) {
+        List<Setmeal> setmealList = setmealMapper.getSetmealsByCategoryId(categoryId, status);
         return setmealList;
     }
 
@@ -129,5 +147,16 @@ public class SetmealServiceImpl implements SetmealService {
     public void updateSetmealStatus(Long id, Integer status) {
         Setmeal setmeal = Setmeal.builder().id(id).status(status).build();
         setmealMapper.updateSetmeal(setmeal);
+    }
+
+    /**
+     * 根据套餐id查询包含的菜品
+     * @param setmealId
+     * @return
+     */
+    @Override
+    public List<DishItemVO> getDishItemBySetmealId(Long setmealId) {
+        List<DishItemVO> dishItemVOList = dishService.getDishItemBySetmealId(setmealId);
+        return dishItemVOList;
     }
 }

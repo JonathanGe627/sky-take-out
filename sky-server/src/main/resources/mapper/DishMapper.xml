@@ -96,5 +96,23 @@
             #{id}
         </foreach>
     </select>
+    <select id="getDishListByCategoryId" resultMap="dishRM">
+        select d.id d_id, d.name d_name, d.category_id, d.price, d.image, d.description, d.status, d.update_time,
+        c.name category_name,
+        df.*
+        from dish d
+        left join category c
+        on d.category_id = c.id
+        left join dish_flavor df
+        on d.id = df.dish_id
+        where d.category_id = #{categoryId}
+    </select>
+    <select id="getDishItemBySetmealId" resultType="com.sky.vo.DishItemVO">
+        select d.name, d.image, d.description, sd.copies
+        from dish d
+        left join setmeal_dish sd
+        on d.id = sd.dish_id
+        where sd.setmeal_id = #{setmealId}
+    </select>
 
 </mapper>

@@ -98,4 +98,14 @@
             #{id}
         </foreach>
     </select>
+    <select id="getSetmealsByCategoryId" resultType="com.sky.entity.Setmeal">
+        select * from setmeal
+        <where>
+            category_id = #{categoryId}
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+
+    </select>
 </mapper>

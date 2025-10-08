@@ -6,7 +6,6 @@ import com.sky.entity.Setmeal;
 import com.sky.enumeration.OperationType;
 import com.sky.vo.SetmealVO;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -40,13 +39,13 @@ public interface SetmealMapper {
     List<SetmealVO> getSetmealsByIds(List<Long> ids);
 
     /**
-     * 根据种类id查询套餐
-     *
-     * @param id
+     * 根据分类id查询已上架/或下架的套餐
+     * status = 1 为上架，status = 0 为下架, null为全部
+     * @param categoryId
+     * @param status
      * @return
      */
-    @Select("select * from setmeal where category_id = #{id}")
-    List<Setmeal> getSetmealsByCategoryId(Long id);
+    List<Setmeal> getSetmealsByCategoryId(Long categoryId, Integer status);
 
     /**
      * 删除套餐

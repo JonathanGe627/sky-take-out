@@ -4,6 +4,7 @@ import com.github.pagehelper.Page;
 import com.sky.annotation.AutoFill;
 import com.sky.entity.Dish;
 import com.sky.enumeration.OperationType;
+import com.sky.vo.DishItemVO;
 import com.sky.vo.DishVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -63,4 +64,19 @@ public interface DishMapper {
     @AutoFill(OperationType.UPDATE)
     void updateDish(Dish dish);
 
+    /**
+     * 根据分类查询已上架/或下架的菜品及口味
+     * status = 1 为上架，status = 0 为下架, null为全部
+     * @param categoryId
+     * @param status
+     * @return
+     */
+    List<DishVO> getDishListByCategoryId(Long categoryId, Integer status);
+
+    /**
+     * 根据套餐id查询包含的菜品
+     * @param setmealId
+     * @return
+     */
+    List<DishItemVO> getDishItemBySetmealId(Long setmealId);
 }

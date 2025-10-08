@@ -4,6 +4,7 @@ import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Setmeal;
 import com.sky.result.PageResult;
+import com.sky.vo.DishItemVO;
 import com.sky.vo.SetmealVO;
 
 import java.util.List;
@@ -31,10 +32,19 @@ public interface SetmealService {
 
     /**
      * 根据种类id查询套餐
-     * @param id
+     * @param categoryId
      * @return
      */
-    List<Setmeal> getSetmealsByCategoryId(Long id);
+    List<Setmeal> getSetmealsByCategoryId(Long categoryId);
+
+    /**
+     * 根据种类id查询已上架/或下架的套餐
+     * status = 1 为上架，status = 0 为下架
+     * @param categoryId
+     * @param status
+     * @return
+     */
+    List<Setmeal> getSetmealsByCategoryId(Long categoryId, Integer status);
 
     /**
      * 修改套餐
@@ -55,4 +65,11 @@ public interface SetmealService {
      * @param status
      */
     void updateSetmealStatus(Long id, Integer status);
+
+    /**
+     * 根据套餐id查询包含的菜品
+     * @param setmealId
+     * @return
+     */
+    List<DishItemVO> getDishItemBySetmealId(Long setmealId);
 }

@@ -15,6 +15,7 @@ import com.sky.result.PageResult;
 import com.sky.service.DishFlavorService;
 import com.sky.service.DishService;
 import com.sky.service.SetmealDishService;
+import com.sky.vo.DishItemVO;
 import com.sky.vo.DishVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -148,5 +149,29 @@ public class DishServiceImpl implements DishService {
     public List<Dish> getDishesByCategoryId(Long categoryId) {
         List<Dish> dishList = dishMapper.getDishesByCategoryId(categoryId);
         return dishList;
+    }
+
+    /**
+     * 根据分类查询已上架/或下架的菜品及口味
+     * status = 1 为上架，status = 0 为下架
+     * @param categoryId
+     * @param status
+     * @return
+     */
+    @Override
+    public List<DishVO> getDishListByCategoryId(Long categoryId, Integer status) {
+        List<DishVO> dishVOList = dishMapper.getDishListByCategoryId(categoryId, status);
+        return dishVOList;
+    }
+
+    /**
+     * 根据套餐id查询包含的菜品
+     * @param setmealId
+     * @return
+     */
+    @Override
+    public List<DishItemVO> getDishItemBySetmealId(Long setmealId) {
+        List<DishItemVO> dishItemVOList = dishMapper.getDishItemBySetmealId(setmealId);
+        return dishItemVOList;
     }
 }

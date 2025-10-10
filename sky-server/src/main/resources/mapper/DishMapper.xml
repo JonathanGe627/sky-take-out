@@ -105,7 +105,7 @@
         on d.category_id = c.id
         left join dish_flavor df
         on d.id = df.dish_id
-        where d.category_id = #{categoryId}
+        where d.category_id = #{categoryId} and d.status = #{status}
     </select>
     <select id="getDishItemBySetmealId" resultType="com.sky.vo.DishItemVO">
         select d.name, d.image, d.description, sd.copies

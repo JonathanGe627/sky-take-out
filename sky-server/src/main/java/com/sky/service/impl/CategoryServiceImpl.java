@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.RedisConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
@@ -17,10 +18,12 @@ import com.sky.result.PageResult;
 import com.sky.service.CategoryService;
 import com.sky.service.DishService;
 import com.sky.service.SetmealService;
+import com.sky.utils.CacheUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
@@ -33,6 +36,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Autowired
     private SetmealService setmealService;
+
+    @Autowired
+    private CacheUtil cacheUtil;
 
     /**
      * 添加分类
@@ -76,6 +82,8 @@ public class CategoryServiceImpl implements CategoryService {
         }
         // 3.删除分类
         categoryMapper.deleteCategory(id);
+        // 4.删除分类缓存
+        cacheUtil.deleteCache(RedisConstant.CATEGORY_CACHE_KEY_PREFIX + 1);
     }
 
     /**
@@ -86,6 +94,7 @@ public class CategoryServiceImpl implements CategoryService {
     public void updateCategory(CategoryDTO categoryDTO) {
         Category category = BeanUtil.copyProperties(categoryDTO, Category.class);
         categoryMapper.updateCategory(category);
+        cacheUtil.deleteCache(RedisConstant.CATEGORY_CACHE_KEY_PREFIX + 1);
     }
 
     /**
@@ -97,6 +106,7 @@ public class CategoryServiceImpl implements CategoryService {
     public void updateCategoryStatus(Long id, Integer status) {
         Category category = Category.builder().id(id).status(status).build();
         categoryMapper.updateCategory(category);
+        cacheUtil.deleteCache(RedisConstant.CATEGORY_CACHE_KEY_PREFIX + 1);
     }
 
     /**
@@ -119,7 +129,20 @@ public class CategoryServiceImpl implements CategoryService {
      */
     @Override
     public List<Category> list(Integer type, Integer status) {
+        // 1.先从缓存中查询数据
+        List<Category> cacheList = cacheUtil.getCacheList(RedisConstant.CATEGORY_CACHE_KEY_PREFIX + status, Category.class);
+        if (CollUtil.isNotEmpty(cacheList)){
+            return cacheList;
+        }
+        // 2.缓存中没有数据，则从数据库中查询数据
         List<Category> categoryList = categoryMapper.list(type, status);
+        // 3.将数据缓存
+        cacheUtil.setCacheList(
+                RedisConstant.CATEGORY_CACHE_KEY_PREFIX + status,
+                categoryList,
+                RedisConstant.CATEGORY_CACHE_TTL,
+                TimeUnit.SECONDS);
+        // 4.返回数据
         return categoryList;
     }
 }

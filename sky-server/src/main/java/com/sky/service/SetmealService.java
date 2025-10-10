@@ -57,7 +57,7 @@ public interface SetmealService {
      * @param id
      * @return
      */
-    SetmealVO getSetmealById(Long id);
+    SetmealVO getSetmealVOById(Long id);
 
     /**
      * 启售/停售套餐

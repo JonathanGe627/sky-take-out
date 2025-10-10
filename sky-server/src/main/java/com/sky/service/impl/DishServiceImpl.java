@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.RedisConstant;
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
@@ -15,14 +16,15 @@ import com.sky.result.PageResult;
 import com.sky.service.DishFlavorService;
 import com.sky.service.DishService;
 import com.sky.service.SetmealDishService;
+import com.sky.utils.CacheUtil;
 import com.sky.vo.DishItemVO;
 import com.sky.vo.DishVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class DishServiceImpl implements DishService {
@@ -35,6 +37,9 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private SetmealDishService setmealDishService;
+
+    @Autowired
+    private CacheUtil cacheUtil;
 
     /**
      * 添加菜品
@@ -54,6 +59,7 @@ public class DishServiceImpl implements DishService {
             dishFlavor.setDishId(dish.getId());
         });
         dishFlavorService.insertDishFlavorList(dishFlavorList);
+        cacheUtil.deleteCache(RedisConstant.DISH_CACHE_KEY_PREFIX + dishDTO.getCategoryId());
     }
 
     /**
@@ -76,10 +82,12 @@ public class DishServiceImpl implements DishService {
     @Transactional
     @Override
     public void deleteDishes(List<Long> ids) {
-        // 1.根据id获取菜品列表
+        // 1.根据id获取菜品列表，并构建缓存keySet
         List<DishVO> dishVOList = dishMapper.getDishListByIds(ids);
+        Set<String> cacheKeySet = new HashSet<>();
         boolean flag = true;
         for (DishVO dishVO : dishVOList) {
+            cacheKeySet.add(RedisConstant.DISH_CACHE_KEY_PREFIX + dishVO.getCategoryId());
             if (dishVO.getStatus() == 1){
                 flag = false;
                 break;
@@ -98,6 +106,8 @@ public class DishServiceImpl implements DishService {
         dishMapper.deleteDishes(ids);
         // 5.删除菜品对应的口味
         dishFlavorService.deleteDishFlavors(ids);
+        // 6.删除缓存
+        cacheUtil.deleteCache(cacheKeySet);
     }
 
     /**
@@ -127,6 +137,7 @@ public class DishServiceImpl implements DishService {
             return;
         }
         dishFlavorService.updateDishFlavor(dish.getId(), dishFlavorList);
+        cacheUtil.deleteCachePattern(RedisConstant.DISH_CACHE_KEY_PREFIX);
     }
 
     /**
@@ -136,8 +147,17 @@ public class DishServiceImpl implements DishService {
      */
     @Override
     public void updateDishStatus(Long id, Integer status) {
+        if (status == 0){
+            ArrayList<Long> list = new ArrayList<>(1);
+            list.add(id);
+            Integer count = setmealDishService.getSetmealCountByDishIds(list);
+            if (count > 0){
+                throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
+            }
+        }
         Dish dish = Dish.builder().id(id).status(status).build();
         dishMapper.updateDish(dish);
+        cacheUtil.deleteCachePattern(RedisConstant.DISH_CACHE_KEY_PREFIX);
     }
 
     /**
@@ -160,7 +180,19 @@ public class DishServiceImpl implements DishService {
      */
     @Override
     public List<DishVO> getDishListByCategoryId(Long categoryId, Integer status) {
+        // 1.先从缓存中查询数据
+        List<DishVO> cacheList = cacheUtil.getCacheList(RedisConstant.DISH_CACHE_KEY_PREFIX + categoryId, DishVO.class);
+        // 2.如果查询到数据，则直接返回
+        if (CollUtil.isNotEmpty(cacheList)){
+            return cacheList;
+        }
+        // 3.如果没查询到数据，则从数据库中查询
         List<DishVO> dishVOList = dishMapper.getDishListByCategoryId(categoryId, status);
+        if (CollUtil.isEmpty(dishVOList)){
+            return Collections.emptyList();
+        }
+        // 4.将数据缓存
+        cacheUtil.setCacheList(RedisConstant.DISH_CACHE_KEY_PREFIX + categoryId, dishVOList, RedisConstant.DISH_CACHE_TTL, TimeUnit.SECONDS);
         return dishVOList;
     }
 

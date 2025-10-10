@@ -1,9 +1,11 @@
 package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.RedisConstant;
 import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Setmeal;
@@ -14,6 +16,7 @@ import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.service.SetmealDishService;
 import com.sky.service.SetmealService;
+import com.sky.utils.CacheUtil;
 import com.sky.vo.DishItemVO;
 import com.sky.vo.SetmealVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +24,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class SetmealServiceImpl implements SetmealService {
@@ -35,6 +41,9 @@ public class SetmealServiceImpl implements SetmealService {
     @Autowired
     private DishService dishService;
 
+    @Autowired
+    private CacheUtil cacheUtil;
+
     /**
      * 新增套餐
      * @param setmealDTO
@@ -47,6 +56,7 @@ public class SetmealServiceImpl implements SetmealService {
         List<SetmealDish> setmealDishList = setmealDTO.getSetmealDishes();
         setmealDishList.forEach(setmealDish -> setmealDish.setSetmealId(setmeal.getId()));
         setmealDishService.insertSetmealDish(setmealDishList);
+        cacheUtil.deleteCache(RedisConstant.SETMEAL_CACHE_KEY_PREFIX + setmealDTO.getCategoryId());
     }
 
     /**
@@ -69,10 +79,14 @@ public class SetmealServiceImpl implements SetmealService {
     @Transactional
     @Override
     public void deleteSetmeals(List<Long> ids) {
-        // 1.查询当前套餐状态
+        // 1.查询当前套餐状态，并构建缓存key
         List<SetmealVO> setmealVOList = setmealMapper.getSetmealsByIds(ids);
+        Set<String> setmealCacheSet = new HashSet<>();
+        Set<String> setmealDishCacheSet = new HashSet<>();
         boolean flag = true;
         for (SetmealVO setmealVO : setmealVOList) {
+            setmealCacheSet.add(RedisConstant.SETMEAL_CACHE_KEY_PREFIX + setmealVO.getCategoryId());
+            setmealDishCacheSet.add(RedisConstant.DISH_SETMEAL_CACHE_KEY_PREFIX + setmealVO.getId());
             if (setmealVO.getStatus() == 1){
                 flag = false;
                 break;
@@ -86,6 +100,9 @@ public class SetmealServiceImpl implements SetmealService {
         setmealMapper.deleteSetmeals(ids);
         // 4.删除套餐-菜品关联表
         setmealDishService.deleteSetmealdishes(ids);
+        // 5.删除缓存
+        cacheUtil.deleteCache(setmealCacheSet);
+        cacheUtil.deleteCache(setmealDishCacheSet);
     }
 
     /**
@@ -108,7 +125,18 @@ public class SetmealServiceImpl implements SetmealService {
      */
     @Override
     public List<Setmeal> getSetmealsByCategoryId(Long categoryId, Integer status) {
+        List<Setmeal> cacheList = cacheUtil.getCacheList(
+                RedisConstant.SETMEAL_CACHE_KEY_PREFIX + categoryId,
+                Setmeal.class);
+        if (CollUtil.isNotEmpty(cacheList)){
+            return cacheList;
+        }
         List<Setmeal> setmealList = setmealMapper.getSetmealsByCategoryId(categoryId, status);
+        cacheUtil.setCacheList(
+                RedisConstant.SETMEAL_CACHE_KEY_PREFIX + categoryId,
+                setmealList,
+                RedisConstant.SETMEAL_CACHE_TTL,
+                TimeUnit.SECONDS);
         return setmealList;
     }
 
@@ -123,6 +151,8 @@ public class SetmealServiceImpl implements SetmealService {
         setmealMapper.updateSetmeal(setmeal);
         List<SetmealDish> setmealDishList = setmealDTO.getSetmealDishes();
         setmealDishService.updateSetmealDish(setmeal.getId(),setmealDishList);
+        cacheUtil.deleteCachePattern(RedisConstant.SETMEAL_CACHE_KEY_PREFIX);
+        cacheUtil.deleteCache(RedisConstant.DISH_SETMEAL_CACHE_KEY_PREFIX + setmealDTO.getId());
     }
 
     /**
@@ -131,7 +161,7 @@ public class SetmealServiceImpl implements SetmealService {
      * @return
      */
     @Override
-    public SetmealVO getSetmealById(Long id) {
+    public SetmealVO getSetmealVOById(Long id) {
         ArrayList<Long> idList = new ArrayList<>(1);
         idList.add(id);
         List<SetmealVO> setmealVOList = setmealMapper.getSetmealsByIds(idList);
@@ -147,6 +177,7 @@ public class SetmealServiceImpl implements SetmealService {
     public void updateSetmealStatus(Long id, Integer status) {
         Setmeal setmeal = Setmeal.builder().id(id).status(status).build();
         setmealMapper.updateSetmeal(setmeal);
+        cacheUtil.deleteCachePattern(RedisConstant.SETMEAL_CACHE_KEY_PREFIX);
     }
 
     /**
@@ -156,7 +187,18 @@ public class SetmealServiceImpl implements SetmealService {
      */
     @Override
     public List<DishItemVO> getDishItemBySetmealId(Long setmealId) {
+        List<DishItemVO> cacheList = cacheUtil.getCacheList(
+                RedisConstant.DISH_SETMEAL_CACHE_KEY_PREFIX + setmealId,
+                DishItemVO.class);
+        if (CollUtil.isNotEmpty(cacheList)){
+            return cacheList;
+        }
         List<DishItemVO> dishItemVOList = dishService.getDishItemBySetmealId(setmealId);
+        cacheUtil.setCacheList(
+                RedisConstant.DISH_SETMEAL_CACHE_KEY_PREFIX + setmealId,
+                dishItemVOList,
+                RedisConstant.DISH_SETMEAL_CACHE_TTL,
+                TimeUnit.SECONDS);
         return dishItemVOList;
     }
 }

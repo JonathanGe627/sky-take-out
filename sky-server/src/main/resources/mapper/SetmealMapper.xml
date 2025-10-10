@@ -106,6 +106,5 @@
                 and status = #{status}
             </if>
         </where>
-
     </select>
 </mapper>

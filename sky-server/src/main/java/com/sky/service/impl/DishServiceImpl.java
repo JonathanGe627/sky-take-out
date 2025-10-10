@@ -155,8 +155,7 @@ public class DishServiceImpl implements DishService {
                 throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
             }
         }
-        Dish dish = Dish.builder().id(id).status(status).build();
-        dishMapper.updateDish(dish);
+        dishMapper.updateDishStatus(id, status);
         cacheUtil.deleteCachePattern(RedisConstant.DISH_CACHE_KEY_PREFIX);
     }
 

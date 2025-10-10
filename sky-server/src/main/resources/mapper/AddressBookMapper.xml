@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.sky.mapper.AddressBookMapper">
+    <update id="updateAddressBook">
+        update address_book                     
+        <set>
+            consignee = #{consignee}, phone = #{phone}, sex = #{sex}, 
+            province_code = #{provinceCode}, province_name = #{provinceName}, 
+            city_code = #{cityCode}, city_name = #{cityName}, 
+            district_code = #{districtCode}, district_name = #{districtName}, 
+            detail = #{detail}, label = #{label},
+            <if test="isDefault != null">
+                is_default = #{isDefault}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>

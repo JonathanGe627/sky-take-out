@@ -175,8 +175,7 @@ public class SetmealServiceImpl implements SetmealService {
      */
     @Override
     public void updateSetmealStatus(Long id, Integer status) {
-        Setmeal setmeal = Setmeal.builder().id(id).status(status).build();
-        setmealMapper.updateSetmeal(setmeal);
+        setmealMapper.updateSetmealStatus(id, status);
         cacheUtil.deleteCachePattern(RedisConstant.SETMEAL_CACHE_KEY_PREFIX);
     }
 

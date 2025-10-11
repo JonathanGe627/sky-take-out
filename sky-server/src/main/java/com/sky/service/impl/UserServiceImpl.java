@@ -72,6 +72,17 @@ public class UserServiceImpl implements UserService {
         return userLoginVO;
     }
 
+    /**
+     * 根据userId获取用户
+     * @param userId
+     * @return
+     */
+    @Override
+    public User getUserById(Long userId) {
+        User user = userMapper.getUserById(userId);
+        return user;
+    }
+
     private String getOpenid(String code) {
         HashMap<String, String> map = new HashMap<>();
         map.put("appid", weChatProperties.getAppid());

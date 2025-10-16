@@ -7,6 +7,14 @@
         values
             (#{name}, #{userId}, #{dishId}, #{setmealId}, #{dishFlavor}, #{number}, #{amount}, #{image}, #{createTime})
     </insert>
+    <insert id="insertIntoShoppingCartBatch">
+        insert into shopping_cart
+            (name, user_id, dish_id, setmeal_id, dish_flavor, number, amount, image, create_time)
+        values 
+        <foreach collection="shoppingCartList" item="shoppingCart" separator=",">
+            (#{shoppingCart.name}, #{shoppingCart.userId}, #{shoppingCart.dishId}, #{shoppingCart.setmealId}, #{shoppingCart.dishFlavor}, #{shoppingCart.number}, #{shoppingCart.amount}, #{shoppingCart.image}, #{shoppingCart.createTime})
+        </foreach>
+    </insert>
     <update id="updateShoppingCart">
         update shopping_cart set
         name = #{name}, user_id = #{userId}, dish_id = #{dishId}, setmeal_id = #{setmealId},

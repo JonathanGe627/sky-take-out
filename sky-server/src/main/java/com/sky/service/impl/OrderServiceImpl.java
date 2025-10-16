@@ -2,18 +2,27 @@ package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
+import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
 import com.sky.entity.AddressBook;
 import com.sky.entity.OrderDetail;
 import com.sky.entity.Orders;
 import com.sky.entity.ShoppingCart;
+import com.sky.exception.OrderBusinessException;
 import com.sky.mapper.OrderMapper;
-import com.sky.service.*;
-import com.sky.utils.WeChatPayUtil;
+import com.sky.result.PageResult;
+import com.sky.service.AddressBookService;
+import com.sky.service.OrderDetailService;
+import com.sky.service.OrderService;
+import com.sky.service.ShoppingCartService;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,12 +40,6 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderMapper orderMapper;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private WeChatPayUtil weChatPayUtil;
 
     @Autowired
     private OrderDetailService orderDetailService;
@@ -153,5 +157,115 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+    }
+
+    /**
+     * 历史订单查询
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult<OrderVO> page(OrdersPageQueryDTO ordersPageQueryDTO) {
+        Long userId = BaseContext.getCurrentId();
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        Page<Orders> page = orderMapper.page(userId, ordersPageQueryDTO.getStatus());
+        List<Orders> ordersList = page.getResult();
+
+        List<Long> orderIdList = ordersList.stream().map(Orders::getId).collect(Collectors.toList());
+        List<OrderDetail> orderDetailList = orderMapper.getOrderDetailsByOrderIdList(orderIdList);
+        Map<Long, List<OrderDetail>> map = orderDetailList.stream().collect(Collectors.groupingBy(OrderDetail::getOrderId));
+
+        List<OrderVO> orderVOList = ordersList.stream().map(order -> {
+            OrderVO orderVO = BeanUtil.copyProperties(order, OrderVO.class);
+            List<OrderDetail> orderDetails = map.get(order.getId());
+            orderVO.setOrderDetailList(orderDetails);
+            return orderVO;
+        }).collect(Collectors.toList());
+        PageResult<OrderVO> pageResult = new PageResult<>(page.getTotal(), orderVOList);
+        return pageResult;
+    }
+
+    /**
+     * 查询订单详情
+     * @param id
+     * @return
+     */
+    @Override
+    public OrderVO getOrderById(Long id) {
+        Long userId = BaseContext.getCurrentId();
+        OrderVO orderVO = orderMapper.getOrderById(userId, id);
+        return orderVO;
+    }
+
+    /**
+     * 取消订单
+     * @param id
+     */
+    @Override
+    public void cancelOrder(Long id) {
+        OrderVO orderVO = this.getOrderById(id);
+        Orders orders = BeanUtil.copyProperties(orderVO, Orders.class);
+        if (Orders.PENDING_PAYMENT.equals(orders.getStatus()) || Orders.TO_BE_CONFIRMED.equals(orders.getStatus())){
+            // 1.待支付和待接单状态下，用户可直接取消订单
+            if (Orders.TO_BE_CONFIRMED.equals(orders.getStatus())){
+                // 订单处于待接单状态下取消，需要进行退款
+                orders.setPayStatus(Orders.REFUND);
+            }
+            orders.setStatus(Orders.CANCELLED);
+            orders.setCancelTime(LocalDateTime.now());
+            orders.setCancelReason("用户取消");
+            orderMapper.update(orders);
+        } else {
+            // 2.商家已接单状态下，派送中状态下，用户取消订单需电话沟通商家
+            throw new OrderBusinessException(MessageConstant.ORDER_CANT_CANCEL);
+        }
+
+    }
+
+    /**
+     * 再来一单
+     * @param id
+     */
+    @Override
+    public void repetition(Long id) {
+        Long userId = BaseContext.getCurrentId();
+        OrderVO orderVO = orderMapper.getOrderById(userId, id);
+        shoppingCartService.repetition(orderVO.getOrderDetailList());
+    }
+
+    /**
+     * 订单搜索
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult<OrderVO> conditionSearchOrder(OrdersPageQueryDTO ordersPageQueryDTO) {
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        Page<Orders> page = orderMapper.conditionSearchOrder(
+                ordersPageQueryDTO.getNumber(),
+                ordersPageQueryDTO.getPhone(),
+                ordersPageQueryDTO.getStatus(),
+                ordersPageQueryDTO.getBeginTime(),
+                ordersPageQueryDTO.getEndTime());
+        List<Orders> ordersList = page.getResult();
+        List<Long> orderIdList = ordersList.stream().map(Orders::getId).collect(Collectors.toList());
+        List<OrderDetail> orderDetailList = orderMapper.getOrderDetailsByOrderIdList(orderIdList);
+        Map<Long, List<OrderDetail>> map = orderDetailList.stream().collect(Collectors.groupingBy(OrderDetail::getOrderId));
+        List<OrderVO> orderVOList = ordersList.stream().map(order -> {
+            OrderVO orderVO = BeanUtil.copyProperties(order, OrderVO.class);
+            StringBuilder orderDishes = new StringBuilder();
+            List<OrderDetail> orderDetails = map.get(order.getId());
+            for (int i = 0; i < orderDetailList.size(); i++) {
+                orderDishes.append(orderDetailList.get(i).getName()).append("*").append(orderDetailList.get(i).getNumber());
+                if (i < orderDetailList.size() - 1) {
+                    orderDishes.append(", ");
+                }
+            }
+            orderVO.setOrderDetailList(orderDetails);
+            orderVO.setOrderDishes(orderDishes.toString());
+            return orderVO;
+        }).collect(Collectors.toList());
+        PageResult<OrderVO> pageResult = new PageResult<>(page.getTotal(), orderVOList);
+        return pageResult;
     }
 }

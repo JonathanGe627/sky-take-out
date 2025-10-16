@@ -1,6 +1,7 @@
 package com.sky.service;
 
 import com.sky.dto.ShoppingCartDTO;
+import com.sky.entity.OrderDetail;
 import com.sky.entity.ShoppingCart;
 
 import java.util.List;
@@ -29,4 +30,10 @@ public interface ShoppingCartService {
      * @param shoppingCartDTO
      */
     void subShoppingCart(ShoppingCartDTO shoppingCartDTO);
+
+    /**
+     * 再来一单
+     * @param orderDetailList
+     */
+    void repetition(List<OrderDetail> orderDetailList);
 }

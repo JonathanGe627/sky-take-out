@@ -38,4 +38,89 @@
         </set>
         where id = #{id}
     </update>
+
+    <resultMap id="orderRM" type="com.sky.vo.OrderVO">
+        <id column="id" property="id"></id>
+        <result column="number" property="number"></result>
+        <result column="status" property="status"></result>
+        <result column="user_id" property="userId"></result>
+        <result column="address_book_id" property="addressBookId"></result>
+        <result column="order_time" property="orderTime"></result>
+        <result column="checkout_time" property="checkoutTime"></result>
+        <result column="pay_method" property="payMethod"></result>
+        <result column="pay_status" property="payStatus"></result>
+        <result column="amount" property="amount"></result>
+        <result column="remark" property="remark"></result>
+        <result column="user_name" property="userName"></result>
+        <result column="phone" property="phone"></result>
+        <result column="address" property="address"></result>
+        <result column="consignee" property="consignee"></result>
+        <result column="cancel_reason" property="cancelReason"></result>
+        <result column="rejection_reason" property="rejectionReason"></result>
+        <result column="cancel_time" property="cancelTime"></result>
+        <result column="estimated_delivery_time" property="estimatedDeliveryTime"></result>
+        <result column="delivery_status" property="deliveryStatus"></result>
+        <result column="delivery_time" property="deliveryTime"></result>
+        <result column="pack_amount" property="packAmount"></result>
+        <result column="tableware_number" property="tablewareNumber"></result>
+        <result column="tableware_status" property="tablewareStatus"></result>
+        <collection property="orderDetailList" ofType="com.sky.entity.OrderDetail">
+            <id column="od_id" property="id"></id>
+            <result column="name" property="name"></result>
+            <result column="order_id" property="orderId"></result>
+            <result column="dish_id" property="dishId"></result>
+            <result column="setmeal_id" property="setmealId"></result>
+            <result column="dish_flavor" property="dishFlavor"></result>
+            <result column="od_number" property="number"></result>
+            <result column="od_amount" property="amount"></result>
+            <result column="image" property="image"></result>
+        </collection>
+    </resultMap>
+    <select id="getOrderById" resultMap="orderRM">
+        select o.*, od.id od_id, od.name, od.image, od.order_id, od.dish_id, od.setmeal_id, od.dish_flavor, od.number od_number, od.amount od_amount
+        from (
+        select * from orders
+        where user_id = #{userId} and id = #{id}
+        ) o
+        left join order_detail od
+        on o.id = od.order_id
+    </select>
+    <select id="page" resultType="com.sky.entity.Orders">
+        select * from orders
+        <where>
+            user_id = #{userId}
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+        order by order_time desc
+    </select>
+    <select id="getOrderDetailsByOrderIdList" resultType="com.sky.entity.OrderDetail">
+        select * from order_detail
+        where order_id in
+        <foreach collection="orderIdList" item="orderId" open="(" close=")" separator=",">
+            #{orderId}
+        </foreach>
+    </select>
+    <select id="conditionSearchOrder" resultType="com.sky.entity.Orders">
+        select * from orders
+        <where>
+            <if test="number != null and number != ''">
+                number = #{number}
+            </if>
+            <if test="phone != null and phone != ''">
+                and phone = #{phone}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="beginTime != null">
+                and order_time > #{beginTime}
+            </if>
+            <if test="endTime != null">
+                and order_time &lt; #{endTime}
+            </if>
+        </where>
+        order by order_time desc
+    </select>
 </mapper>

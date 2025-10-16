@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.ShoppingCartDTO;
+import com.sky.entity.OrderDetail;
 import com.sky.entity.ShoppingCart;
 import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.ShoppingCartMapper;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ShoppingCartServiceImpl implements ShoppingCartService {
@@ -126,6 +128,21 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         // 2.数量大于1，数量减1
         shoppingCartDB.setNumber(shoppingCartDB.getNumber() - 1);
         shoppingCartMapper.updateShoppingCart(shoppingCartDB);
+    }
+
+    /**
+     * 再来一单
+     * @param orderDetailList
+     */
+    @Override
+    public void repetition(List<OrderDetail> orderDetailList) {
+        List<ShoppingCart> shoppingCartList = orderDetailList.stream().map(orderDetail -> {
+            ShoppingCart shoppingCart = BeanUtil.copyProperties(orderDetail, ShoppingCart.class);
+            shoppingCart.setUserId(BaseContext.getCurrentId());
+            shoppingCart.setCreateTime(LocalDateTime.now());
+            return shoppingCart;
+        }).collect(Collectors.toList());
+        shoppingCartMapper.insertIntoShoppingCartBatch(shoppingCartList);
     }
 }
 

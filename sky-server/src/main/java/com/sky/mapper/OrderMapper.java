@@ -44,7 +44,7 @@ public interface OrderMapper {
      * @param id
      * @return
      */
-    OrderVO getOrderById(Long userId, Long id);
+    OrderVO getOrderVOById(Long userId, Long id);
 
     /**
      * 订单搜索
@@ -63,4 +63,26 @@ public interface OrderMapper {
      * @return
      */
     List<OrderDetail> getOrderDetailsByOrderIdList(List<Long> orderIdList);
+
+    /**
+     * 各个状态的订单数量统计
+     * @param statusList
+     * @return
+     */
+    List<Orders> statistics(List<Integer> statusList);
+
+    /**
+     * 查询订单详情
+     * @param id
+     * @return
+     */
+    OrderVO getOrderDetails(Long id);
+
+    /**
+     * 根据id查询订单
+     * @param id
+     * @return
+     */
+    @Select("select * from orders where id = #{id}")
+    Orders getOrderById(Long id);
 }

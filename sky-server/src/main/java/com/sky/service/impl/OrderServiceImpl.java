@@ -1,14 +1,13 @@
 package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.OrdersPageQueryDTO;
-import com.sky.dto.OrdersPaymentDTO;
-import com.sky.dto.OrdersSubmitDTO;
+import com.sky.dto.*;
 import com.sky.entity.AddressBook;
 import com.sky.entity.OrderDetail;
 import com.sky.entity.Orders;
@@ -21,6 +20,7 @@ import com.sky.service.OrderDetailService;
 import com.sky.service.OrderService;
 import com.sky.service.ShoppingCartService;
 import com.sky.vo.OrderPaymentVO;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -191,9 +192,9 @@ public class OrderServiceImpl implements OrderService {
      * @return
      */
     @Override
-    public OrderVO getOrderById(Long id) {
+    public OrderVO getOrderVOById(Long id) {
         Long userId = BaseContext.getCurrentId();
-        OrderVO orderVO = orderMapper.getOrderById(userId, id);
+        OrderVO orderVO = orderMapper.getOrderVOById(userId, id);
         return orderVO;
     }
 
@@ -203,7 +204,7 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public void cancelOrder(Long id) {
-        OrderVO orderVO = this.getOrderById(id);
+        OrderVO orderVO = this.getOrderVOById(id);
         Orders orders = BeanUtil.copyProperties(orderVO, Orders.class);
         if (Orders.PENDING_PAYMENT.equals(orders.getStatus()) || Orders.TO_BE_CONFIRMED.equals(orders.getStatus())){
             // 1.待支付和待接单状态下，用户可直接取消订单
@@ -229,7 +230,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void repetition(Long id) {
         Long userId = BaseContext.getCurrentId();
-        OrderVO orderVO = orderMapper.getOrderById(userId, id);
+        OrderVO orderVO = orderMapper.getOrderVOById(userId, id);
         shoppingCartService.repetition(orderVO.getOrderDetailList());
     }
 
@@ -248,6 +249,9 @@ public class OrderServiceImpl implements OrderService {
                 ordersPageQueryDTO.getBeginTime(),
                 ordersPageQueryDTO.getEndTime());
         List<Orders> ordersList = page.getResult();
+        if (CollUtil.isEmpty(ordersList)){
+            return new PageResult<>(0, new ArrayList<>());
+        }
         List<Long> orderIdList = ordersList.stream().map(Orders::getId).collect(Collectors.toList());
         List<OrderDetail> orderDetailList = orderMapper.getOrderDetailsByOrderIdList(orderIdList);
         Map<Long, List<OrderDetail>> map = orderDetailList.stream().collect(Collectors.groupingBy(OrderDetail::getOrderId));
@@ -268,4 +272,150 @@ public class OrderServiceImpl implements OrderService {
         PageResult<OrderVO> pageResult = new PageResult<>(page.getTotal(), orderVOList);
         return pageResult;
     }
+
+    /**
+     * 各个状态的订单数量统计
+     * @return
+     */
+    @Override
+    public OrderStatisticsVO statistics() {
+        List<Integer> statusList = new ArrayList<>(3);
+        statusList.add(Orders.TO_BE_CONFIRMED);
+        statusList.add(Orders.CONFIRMED);
+        statusList.add(Orders.DELIVERY_IN_PROGRESS);
+        List<Orders> ordersList = orderMapper.statistics(statusList);
+        Map<Integer, List<Orders>> map = ordersList.stream().collect(Collectors.groupingBy(Orders::getStatus));
+        OrderStatisticsVO orderStatisticsVO = new OrderStatisticsVO();
+
+        orderStatisticsVO.setToBeConfirmed(CollUtil.size(map.get(Orders.TO_BE_CONFIRMED)));
+        orderStatisticsVO.setConfirmed(CollUtil.size(map.get(Orders.CONFIRMED)));
+        orderStatisticsVO.setDeliveryInProgress(CollUtil.size(map.get(Orders.DELIVERY_IN_PROGRESS)));
+        return orderStatisticsVO;
+    }
+
+    /**
+     * 查询订单详情
+     * @param id
+     * @return
+     */
+    @Override
+    public OrderVO getOrderDetails(Long id) {
+        OrderVO orderVO = orderMapper.getOrderDetails(id);
+        List<OrderDetail> orderDetailList = orderVO.getOrderDetailList();
+        StringBuilder orderDishes = new StringBuilder();
+        for (int i = 0; i < orderDetailList.size(); i++) {
+            orderDishes.append(orderDetailList.get(i).getName()).append("*").append(orderDetailList.get(i).getNumber());
+            if (i < orderDetailList.size() - 1) {
+                orderDishes.append(", ");
+            }
+        }
+        orderVO.setOrderDishes(orderDishes.toString());
+        return orderVO;
+    }
+
+    /**
+     * 根据id查询订单
+     * @param id
+     * @return
+     */
+    @Override
+    public Orders getOrderById(Long id) {
+        return orderMapper.getOrderById(id);
+    }
+
+    /**
+     * 接单
+     * @param ordersConfirmDTO
+     */
+    @Override
+    public void confirmOrder(OrdersConfirmDTO ordersConfirmDTO) {
+        Orders orderDB = this.getOrderById(ordersConfirmDTO.getId());
+        if (orderDB == null || !Orders.TO_BE_CONFIRMED.equals(orderDB.getStatus())){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Orders order = Orders.builder()
+                .id(orderDB.getId())
+                .status(Orders.CONFIRMED)
+                .build();
+        orderMapper.update(order);
+    }
+
+    /**
+     * 拒单
+     * @param ordersRejectionDTO
+     */
+    @Override
+    public void rejectOrder(OrdersRejectionDTO ordersRejectionDTO) {
+        Orders orderDB = this.getOrderById(ordersRejectionDTO.getId());
+        if (orderDB == null || !Orders.TO_BE_CONFIRMED.equals(orderDB.getStatus())){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Orders order = Orders.builder()
+                .id(orderDB.getId())
+                .status(Orders.CANCELLED)
+                .rejectionReason(ordersRejectionDTO.getRejectionReason())
+                .cancelTime(LocalDateTime.now())
+                .build();
+        orderMapper.update(order);
+    }
+
+    /**
+     * 取消订单
+     * @param ordersCancelDTO
+     */
+    @Override
+    public void cancelOrderAdmin(OrdersCancelDTO ordersCancelDTO) {
+        Orders orderDB = this.getOrderById(ordersCancelDTO.getId());
+        if (orderDB == null){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Integer status = orderDB.getStatus();
+        if (Orders.PENDING_PAYMENT.equals(status) || Orders.CONFIRMED.equals(status) || Orders.DELIVERY_IN_PROGRESS.equals(status) || Orders.COMPLETED.equals(status)){
+            Orders order = Orders.builder()
+                    .id(orderDB.getId())
+                    .status(Orders.CANCELLED)
+                    .cancelReason(ordersCancelDTO.getCancelReason())
+                    .cancelTime(LocalDateTime.now())
+                    .build();
+            orderMapper.update(order);
+        }else {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+    }
+
+    /**
+     * 派送订单
+     * @param id
+     */
+    @Override
+    public void delivery(Long id) {
+        Orders orderDB = this.getOrderById(id);
+        if (orderDB == null || !Orders.CONFIRMED.equals(orderDB.getStatus())){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Orders order = Orders.builder()
+                .id(id)
+                .status(Orders.DELIVERY_IN_PROGRESS)
+                .build();
+        orderMapper.update(order);
+    }
+
+    /**
+     * 完成订单
+     * @param id
+     */
+    @Override
+    public void completeOrder(Long id) {
+        Orders orderDB = this.getOrderById(id);
+        if (orderDB == null || !Orders.DELIVERY_IN_PROGRESS.equals(orderDB.getStatus())){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Orders order = Orders.builder()
+                .id(id)
+                .status(Orders.COMPLETED)
+                .deliveryTime(LocalDateTime.now())
+                .build();
+        orderMapper.update(order);
+    }
+
 }

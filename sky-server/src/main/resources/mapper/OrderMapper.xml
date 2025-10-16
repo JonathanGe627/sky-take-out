@@ -76,7 +76,7 @@
             <result column="image" property="image"></result>
         </collection>
     </resultMap>
-    <select id="getOrderById" resultMap="orderRM">
+    <select id="getOrderVOById" resultMap="orderRM">
         select o.*, od.id od_id, od.name, od.image, od.order_id, od.dish_id, od.setmeal_id, od.dish_flavor, od.number od_number, od.amount od_amount
         from (
         select * from orders
@@ -122,5 +122,20 @@
             </if>
         </where>
         order by order_time desc
+    </select>
+    <select id="statistics" resultType="com.sky.entity.Orders">
+        select * from orders where status in
+        <foreach collection="statusList" item="status" open="(" close=")" separator=",">
+            #{status}
+        </foreach>
+    </select>
+    <select id="getOrderDetails" resultMap="orderRM">
+        select o.*, od.id od_id, od.name, od.image, od.order_id, od.dish_id, od.setmeal_id, od.dish_flavor, od.number od_number, od.amount od_amount
+        from (
+        select * from orders
+        where id = #{id}
+        ) o
+        left join order_detail od
+        on o.id = od.order_id
     </select>
 </mapper>

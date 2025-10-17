@@ -8,6 +8,9 @@ import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 public interface OrderService {
 
     /**
@@ -112,4 +115,24 @@ public interface OrderService {
      * @param id
      */
     void completeOrder(Long id);
+
+    /**
+     * 修改订单
+     * @param order
+     */
+    void update(Orders order);
+
+    /**
+     * 根据订单状态和下单时间查询订单列表
+     * @param status
+     * @param time
+     * @return
+     */
+    List<Orders> getOrdersByStatusAndOrderTimeLT(Integer status, LocalDateTime time);
+
+    /**
+     * 用户催单
+     * @param id
+     */
+    void remind(Long id);
 }

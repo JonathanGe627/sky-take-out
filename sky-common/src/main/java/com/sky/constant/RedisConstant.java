@@ -13,5 +13,5 @@ public class RedisConstant {
     public static final Long SETMEAL_CACHE_TTL = 604800L;
     public static final String DISH_SETMEAL_CACHE_KEY_PREFIX = "dish:setmeal:";
     public static final Long DISH_SETMEAL_CACHE_TTL = 604800L;
-
+    public static final String ORDER_PENDING_KEY_PREFIX = "order:";
 }

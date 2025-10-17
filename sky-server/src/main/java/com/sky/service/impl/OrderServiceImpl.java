@@ -3,6 +3,7 @@ package com.sky.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.json.JSONUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
@@ -23,6 +24,7 @@ import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,6 +53,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private ShoppingCartService shoppingCartService;
+
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     /**
      * 用户提交订单
@@ -156,8 +162,14 @@ public class OrderServiceImpl implements OrderService {
                 .payStatus(Orders.PAID)
                 .checkoutTime(LocalDateTime.now())
                 .build();
-
         orderMapper.update(orders);
+        // 推送报警信息到商家
+        HashMap<String, Object> map = new HashMap<>(3);
+        map.put("type", 1);
+        map.put("orderId", ordersDB.getId());
+        map.put("content", "订单号：" + outTradeNo);
+        String jsonStr = JSONUtil.toJsonStr(map);
+        webSocketServer.sendToAllClient(jsonStr);
     }
 
     /**
@@ -416,6 +428,44 @@ public class OrderServiceImpl implements OrderService {
                 .deliveryTime(LocalDateTime.now())
                 .build();
         orderMapper.update(order);
+    }
+
+    /**
+     * 修改订单
+     * @param order
+     */
+    @Override
+    public void update(Orders order) {
+        orderMapper.update(order);
+    }
+
+    /**
+     * 根据订单状态和下单时间查询订单列表
+     * @param status
+     * @param time
+     * @return
+     */
+    @Override
+    public List<Orders> getOrdersByStatusAndOrderTimeLT(Integer status, LocalDateTime time) {
+        return orderMapper.getOrdersByStatusAndOrderTimeLT(status, time);
+    }
+
+    /**
+     * 用户催单
+     * @param id
+     */
+    @Override
+    public void remind(Long id) {
+        Orders order = this.getOrderById(id);
+        if (order == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        HashMap<String, Object> map = new HashMap<>(3);
+        map.put("type", 2);
+        map.put("orderId", order.getId());
+        map.put("content", "订单号：" + order.getNumber());
+        String jsonStr = JSONUtil.toJsonStr(map);
+        webSocketServer.sendToAllClient(jsonStr);
     }
 
 }

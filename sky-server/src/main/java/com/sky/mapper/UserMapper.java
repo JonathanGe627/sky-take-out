@@ -4,6 +4,9 @@ import com.sky.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Mapper
 public interface UserMapper {
 
@@ -28,4 +31,18 @@ public interface UserMapper {
      */
     @Select("select * from user where id = #{userId}")
     User getUserById(Long userId);
+
+    /**
+     * 用户总数统计
+     * @param dateList
+     * @return
+     */
+    List<Integer> totalUserStatistics(List<LocalDate> dateList);
+
+    /**
+     * 用户新增统计
+     * @param dateList
+     * @return
+     */
+    List<Integer> newUserStatistics(List<LocalDate> dateList);
 }

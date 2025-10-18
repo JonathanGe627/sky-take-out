@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -466,6 +467,52 @@ public class OrderServiceImpl implements OrderService {
         map.put("content", "订单号：" + order.getNumber());
         String jsonStr = JSONUtil.toJsonStr(map);
         webSocketServer.sendToAllClient(jsonStr);
+    }
+
+    /**
+     * 营业额统计
+     * @param begin
+     * @param end
+     * @param status
+     * @return
+     */
+    @Override
+    public List<OrderStatisticsDTO> statisticsOrder(LocalDate begin, LocalDate end, Integer status) {
+        return orderMapper.statisticsOrder(begin, end, status);
+    }
+
+    /**
+     * 按照日期和状态获取订单数
+     * @param dateList
+     * @param status
+     * @return
+     */
+    @Override
+    public List<Integer> getOrderCountList(List<LocalDate> dateList, Integer status) {
+        return orderMapper.getOrderCountList(dateList, status);
+    }
+
+    /**
+     * 统计一段时间内的订单总数
+     * @param begin
+     * @param end
+     * @param status
+     * @return
+     */
+    @Override
+    public Integer getTotalOrderCount(LocalDate begin, LocalDate end, Integer status) {
+        return orderMapper.getTotalOrderCount(begin, end, status);
+    }
+
+    /**
+     * 销量排名Top10
+     * @param begin
+     * @param end
+     * @return
+     */
+    @Override
+    public List<SalesTop10StatisticsDTO> top10(LocalDate begin, LocalDate end) {
+        return orderMapper.top10(begin, end);
     }
 
 }

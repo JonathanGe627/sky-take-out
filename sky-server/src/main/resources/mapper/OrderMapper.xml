@@ -138,4 +138,42 @@
         left join order_detail od
         on o.id = od.order_id
     </select>
+    <select id="statisticsOrder" resultType="com.sky.dto.OrderStatisticsDTO">
+        select DATE(order_time) order_date, SUM(amount) total_amount
+        from orders
+        <where>
+            order_time between #{begin} and #{end}
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+        group by DATE(order_time)
+        order by order_date
+    </select>
+    <select id="getOrderCountList" resultType="java.lang.Integer">
+        <foreach collection="dateList" item="date" separator="UNION ALL">
+            select COUNT(id) from orders
+            where order_time &gt;= #{date} AND order_time &lt; DATE_ADD(#{date}, INTERVAL 1 DAY)
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </foreach>
+    </select>
+    <select id="getTotalOrderCount" resultType="java.lang.Integer">
+        select COUNT(id) from orders where order_time &gt;= #{begin} AND order_time &lt; #{end}
+        <if test="status != null">
+            and status = #{status}
+        </if>
+    </select>
+    <select id="top10" resultType="com.sky.dto.SalesTop10StatisticsDTO">
+        select od.name sale_name, SUM(od.number) sale_number
+        from order_detail od
+        left join orders o
+        on od.order_id = o.id
+        where o.status = 5
+        and o.order_time &gt;= #{begin} AND o.order_time &lt; #{end}
+        group by od.name
+        order by sale_number desc
+        limit 0, 10
+    </select>
 </mapper>

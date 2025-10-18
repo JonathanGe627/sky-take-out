@@ -18,8 +18,10 @@ import com.sky.vo.UserLoginVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -81,6 +83,26 @@ public class UserServiceImpl implements UserService {
     public User getUserById(Long userId) {
         User user = userMapper.getUserById(userId);
         return user;
+    }
+
+    /**
+     * 用户总数统计
+     * @param dateList
+     * @return
+     */
+    @Override
+    public List<Integer> totalUserStatistics(List<LocalDate> dateList) {
+        return userMapper.totalUserStatistics(dateList);
+    }
+
+    /**
+     * 用户新增统计
+     * @param dateList
+     * @return
+     */
+    @Override
+    public List<Integer> newUserStatistics(List<LocalDate> dateList) {
+        return userMapper.newUserStatistics(dateList);
     }
 
     private String getOpenid(String code) {

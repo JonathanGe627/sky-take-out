@@ -7,4 +7,16 @@
         values
             (#{openid}, #{name}, #{phone}, #{sex}, #{idNumber}, #{avatar}, #{createTime})
     </insert>
+    <select id="newUserStatistics" resultType="java.lang.Integer">
+        <foreach collection="dateList" item="date" separator="UNION ALL">
+            select COUNT(id) from user
+            where create_time &gt;= #{date} AND create_time &lt; DATE_ADD(#{date}, INTERVAL 1 DAY)
+        </foreach>
+    </select>
+    <select id="totalUserStatistics" resultType="java.lang.Integer">
+        <foreach collection="dateList" item="date" separator="UNION ALL">
+            select COUNT(id) from user
+            where create_time &lt; DATE_ADD(#{date}, INTERVAL 1 DAY)
+        </foreach>
+    </select>
 </mapper>

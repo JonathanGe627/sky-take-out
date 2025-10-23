@@ -8,8 +8,8 @@ sky:
     password: 19990627
   alioss:
     endpoint: oss-cn-beijing.aliyuncs.com
-    access-key-id: LTAI5tDWyW9Eum8orYFdHRED
-    access-key-secret: VRe2IlwGO9Oc9LziGSo8mRXlyOYQI8
+    access-key-id: ***
+    access-key-secret: ***
     bucket-name: jonathan-sky-take-out
   redis:
     host: 192.168.46.48
@@ -23,5 +23,5 @@ sky:
         min-idle: 0 # 最小空闲连接
         max-wait: 100 # 连接等待时间
   wechat:
-    appid: wx3188f73ec19618a2
-    secret: ef42be9bdea712ac8828ffbf17021786
+    appid: ***
+    secret: ***
